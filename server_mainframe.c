@@ -29,12 +29,15 @@ void *ThreadBehavior(void *t_data)
     struct thread_data_t *th_data = (struct thread_data_t*)t_data;
     //dostęp do pól struktury: (*th_data).pole
     //TODO (przy zadaniu 1) klawiatura -> wysyłanie albo odbieranie -> wyświetlanie
-
+    //
     pthread_exit(NULL);
 }
 
 //funkcja obsługująca połączenie z nowym klientem
 void handleConnection(int connection_socket_descriptor) {
+
+    printf("New connection established, socket id:%d\n", connection_socket_descriptor);
+
     //wynik funkcji tworzącej wątek
     int create_result = 0;
 
