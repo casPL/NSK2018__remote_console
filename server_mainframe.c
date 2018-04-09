@@ -18,7 +18,8 @@
 //struktura zawierająca dane, które zostaną przekazane do wątku
 struct thread_data_t
 {
-//TODO
+	//TODO
+	int new_socket_descriptor;
 };
 
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
@@ -43,7 +44,12 @@ void handleConnection(int connection_socket_descriptor) {
     //dane, które zostaną przekazane do wątku
     //TODO dynamiczne utworzenie instancji struktury thread_data_t o nazwie t_data (+ w odpowiednim miejscu zwolnienie pamięci)
     //TODO wypełnienie pól struktury
-
+    
+    struct thread_data_t * t_data;
+    t_data = malloc(sizeof(struct thread_data_t));
+    t_data->new_socket_descriptor = connection_socket_descriptor;
+    
+    
     create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);
     if (create_result){
        printf("Błąd przy próbie utworzenia wątku, kod błędu: %d\n", create_result);
