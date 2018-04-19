@@ -20,6 +20,8 @@ struct thread_data_t
 {
 	//TODO
 	int new_socket_descriptor;
+	int status;
+	int czas;
 };
 
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
