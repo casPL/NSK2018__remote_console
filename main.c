@@ -37,15 +37,17 @@ void *ThreadBehavior(void *t_data)
     struct thread_data_t *th_data = (struct thread_data_t*)t_data;
     //dostęp do pól struktury: (*th_data).pole
     //TODO (przy zadaniu 1) klawiatura -> wysyłanie albo odbieranie -> wyświetlanie
-    char command[BUF];
+    write ((*th_data).new_socket_descriptor, "Connection Established\n",24);
+    char command[BUF] = {0};
     while (1) {	
 	    read((*th_data).new_socket_descriptor, command, BUF);
 	    printf("%s", command);
-	    printf("Command executed\n");
 	    system(command);
-	    write ((*th_data).new_socket_descriptor, "Executed\n", 12);
-
+	    dup2((*th_data).new_socket_descriptor, STDOUT_FILENO);
+	    dup2((*th_data).new_socket_descriptor, STDERR_FILENO);
+	    printf("Command executed\n");
     }
+    printf("Closing connection");
     close((*th_data).new_socket_descriptor);
     pthread_exit(NULL);
 }
