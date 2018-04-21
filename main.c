@@ -1,3 +1,9 @@
+/* 
+	Simple telnet server.
+	Maciej Kasprzyk inf138575
+	PUT :: NSK 2018
+*/
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
@@ -12,7 +18,6 @@
 #include <time.h>
 #include <pthread.h>
 
-#define SERVER_PORT 1234
 #define QUEUE_SIZE 5
 #define BUF 1024
 
@@ -36,7 +41,12 @@ void *ThreadBehavior(void *t_data)
     while (1) {	
 	    read((*th_data).new_socket_descriptor, command, BUF);
 	    printf("%s", command);
+	    printf("Command executed\n");
+	    system(command);
+	    write ((*th_data).new_socket_descriptor, "Executed\n", 12);
+
     }
+    close((*th_data).new_socket_descriptor);
     pthread_exit(NULL);
 }
 
@@ -80,18 +90,21 @@ void handleConnection(int connection_socket_descriptor) {
 
 int main(int argc, char* argv[])
 {
-	printf("Starting program: %s\nArguments: %s\n", argv[0], argv[1]);
+	//safe start section
+	
 	if ( argc <= 1) {
-		printf("Bad syntax. Misiing argument\nProper usage: ./server [port_number]\n");
+		printf("Error. Bad syntax. Misiing argument\nProper usage: ./server [port_number]\n");
 		exit(1);
 	}
+	printf("Starting program: %s with arguments: %s\n", argv[0], argv[1]);
 	unsigned int server_port = atoi(argv[1]);
 	if(server_port <1025 || server_port >65535) {
-		printf("Ports specified must be between 1025 and 65535 inclusive\n");
+		printf("Error specified port must be between 1025 and 65535 inclusive\n");
 		exit(2);
 	}
 	printf("Setting port to: %d\n", server_port);
-
+	//section end
+	
    int server_socket_descriptor;
    int connection_socket_descriptor;
    int bind_result;
@@ -109,7 +122,7 @@ int main(int argc, char* argv[])
    server_socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
    if (server_socket_descriptor < 0)
    {
-       fprintf(stderr, "%s: Błąd przy próbie utworzenia gniazda..\n", argv[0]);
+       fprintf(stderr, "%s: Cannot set socket.\n", argv[0]);
        exit(1);
    }
    setsockopt(server_socket_descriptor, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse_addr_val, sizeof(reuse_addr_val));
@@ -120,7 +133,7 @@ int main(int argc, char* argv[])
        fprintf(stderr, "%s: Błąd przy próbie dowiązania adresu IP i numeru portu do gniazda.\n", argv[0]);
        exit(1);
    }
-
+	printf("Server started.\n");
    listen_result = listen(server_socket_descriptor, QUEUE_SIZE);
    if (listen_result < 0) {
        fprintf(stderr, "%s: Błąd przy próbie ustawienia wielkości kolejki.\n", argv[0]);
