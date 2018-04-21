@@ -31,12 +31,13 @@ void *ThreadBehavior(void *t_data)
 		if(strncmp(text, "bye\n", strlen("bye\n")) == 0) break;
 		if(send((*th_data).desc_new, text, strlen(text)+1, 0) < 0) printf("Error while sending");
 	}
-	char buf[BUF_SIZE] = {0};
-	int filled = 0;	
-	while(filled = recv((*th_data).desc_new, buf, BUF_SIZE-1, 0)) {
-		buf[filled] = '\0';
-		printf("%s", buf);
-		fflush(stdout);								}	
+//	char buf[BUF_SIZE] = {0};
+//	int filled = 0;	
+//	while(filled = recv((*th_data).desc_new, buf, BUF_SIZE-1, 0)) {
+//		buf[filled] = '\0';
+//		printf("%s", buf);
+//		fflush(stdout);
+//	}
 	printf("Terminating connection.\n");
     	pthread_exit(NULL);
 }
@@ -59,11 +60,11 @@ void handleConnection(int connection_socket_descriptor) {
 
 	char text2[BUF_SIZE];
 	int len = 0;
-//	while (1) {
-//		fgets(text2, BUF_SIZE, stdin);
-//		len = strlen(text2);
-//		write (connection_socket_descriptor, text2, len);
-//	}
+	while (1) {
+		fgets(text2, BUF_SIZE, stdin);
+		len = strlen(text2);
+		write (connection_socket_descriptor, text2, len);
+	}
 	pthread_exit(NULL);
 
 }

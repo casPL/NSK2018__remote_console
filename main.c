@@ -1,5 +1,5 @@
 /* 
-	Simple telnet server.
+	Simple network console server.
 	Maciej Kasprzyk inf138575
 	PUT :: NSK 2018
 */
@@ -31,31 +31,30 @@ struct thread_data_t
 };
 
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
-void *ThreadBehavior(void *t_data)
-{
-    pthread_detach(pthread_self());
-    struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-    //dostęp do pól struktury: (*th_data).pole
-    //TODO (przy zadaniu 1) klawiatura -> wysyłanie albo odbieranie -> wyświetlanie
-    write ((*th_data).new_socket_descriptor, "Connection Established\n",24);
-    char command[BUF] = {0};
-    while (1) {	
-	    read((*th_data).new_socket_descriptor, command, BUF);
-	    printf("%s", command);
-	    system(command);
-	    dup2((*th_data).new_socket_descriptor, STDOUT_FILENO);
-	    dup2((*th_data).new_socket_descriptor, STDERR_FILENO);
-	    printf("Command executed\n");
-    }
-    printf("Closing connection");
-    close((*th_data).new_socket_descriptor);
-    pthread_exit(NULL);
+void *ThreadBehavior(void *t_data) {
+	pthread_detach(pthread_self());
+	struct thread_data_t *th_data = (struct thread_data_t*)t_data;
+	//dostęp do pól struktury: (*th_data).pole
+    
+	write ((*th_data).new_socket_descriptor, "Connection Established\n# ",25);
+
+	char command[BUF] = {0};
+    	while ( read((*th_data).new_socket_descriptor, command, BUF) > 0) {	
+		if(dup2((*th_data).new_socket_descriptor, STDOUT_FILENO) == -1)
+			printf("STDOUT ERROR \n");
+		if(dup2((*th_data).new_socket_descriptor, STDERR_FILENO) == -1)
+			printf("STDERR ERROR \n");
+		system(command);
+	    	write ((*th_data).new_socket_descriptor, "# ",3);
+    	}
+    	printf("Closing connection");
+    	close((*th_data).new_socket_descriptor);
+   	free(t_data);
+    	pthread_exit(NULL);
 }
 
 //funkcja obsługująca połączenie z nowym klientem
 void handleConnection(int connection_socket_descriptor) {
-
-    printf("New connection established, socket id:%d\n", connection_socket_descriptor);
 
     //wynik funkcji tworzącej wątek
     int create_result = 0;
@@ -80,14 +79,15 @@ void handleConnection(int connection_socket_descriptor) {
 
     //TODO (przy zadaniu 1) odbieranie -> wyświetlanie albo klawiatura -> wysyłanie
     //
-    char server_response[BUF];
-    int len = 0;
-    while (1) {
-	    memset(server_response, 0, BUF);
-	    fgets(server_response, BUF, stdin);
-	    len = strlen(server_response);
-	    write (connection_socket_descriptor, server_response, len);
-    }
+//    char server_response[BUF];
+//    int len = 0;
+//    while (1) {
+//	    memset(server_response, 0, BUF);
+//	    fgets(server_response, BUF, stdin);
+//	    len = strlen(server_response);
+//	    write (connection_socket_descriptor, server_response, len);
+//    }
+    	printf("New connection established, socket id: %x\n", connection_socket_descriptor);
 }
 
 int main(int argc, char* argv[])
@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
 		exit(2);
 	}
 	printf("Setting port to: %d\n", server_port);
+	
 	//section end
 	
    int server_socket_descriptor;
@@ -124,7 +125,7 @@ int main(int argc, char* argv[])
    server_socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
    if (server_socket_descriptor < 0)
    {
-       fprintf(stderr, "%s: Cannot set socket.\n", argv[0]);
+       fprintf(stderr, "%s: Cannot open a socket.\n", argv[0]);
        exit(1);
    }
    setsockopt(server_socket_descriptor, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse_addr_val, sizeof(reuse_addr_val));
@@ -142,18 +143,17 @@ int main(int argc, char* argv[])
        exit(1);
    }
 
-   while(1)
-   {
-       connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
-       if (connection_socket_descriptor < 0)
-       {
-           fprintf(stderr, "%s: Błąd przy próbie utworzenia gniazda dla połączenia.\n", argv[0]);
-           exit(1);
-       }
+	
+   	while(1) {
+       		connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
+       		if (connection_socket_descriptor < 0) {
+           		fprintf(stderr, "%s: Błąd przy próbie utworzenia gniazda dla połączenia.\n", argv[0]);
+           		exit(1);
+       		}
 
-       handleConnection(connection_socket_descriptor);
-   }
-
-   close(server_socket_descriptor);
-   return(0);
+       	handleConnection(connection_socket_descriptor);
+	}
+	printf("Shutting server down...\n");
+   	close(server_socket_descriptor);
+   	return(0);
 }
