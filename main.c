@@ -39,7 +39,8 @@ void *ThreadBehavior(void *t_data) {
 	write ((*th_data).new_socket_descriptor, "Connection Established\n# ",25);
 
 	char command[BUF] = {0};
-    	while ( read((*th_data).new_socket_descriptor, command, BUF) > 0) {	
+    	while ( read((*th_data).new_socket_descriptor, command, BUF) > 0) {
+		printf("Recieved command: %s\n", command);	
 		if(dup2((*th_data).new_socket_descriptor, STDOUT_FILENO) == -1)
 			printf("STDOUT ERROR \n");
 		if(dup2((*th_data).new_socket_descriptor, STDERR_FILENO) == -1)
@@ -87,7 +88,7 @@ void handleConnection(int connection_socket_descriptor) {
 //	    len = strlen(server_response);
 //	    write (connection_socket_descriptor, server_response, len);
 //    }
-    	printf("New connection established, socket id: %x\n", connection_socket_descriptor);
+//    	printf("New connection established, socket id: %x\n", connection_socket_descriptor);
 }
 
 int main(int argc, char* argv[])
