@@ -1,6 +1,6 @@
 /* 
 	Simple network console server.
-	Maciej Kasprzyk inf138575
+	inf138575
 	PUT :: NSK 2018
 */
 
@@ -19,42 +19,72 @@
 #include <pthread.h>
 
 #define QUEUE_SIZE 5
-#define BUF 1024
+#define BUF_SIZE 1024
+#define PROMPT "> "
+#define GOODBYE_MSG "Bye... \n"
+#define STDERR_POSTFIX "2>&1"
+
+
+#define FLAG		0x10
+#define ESC		0x11
+#define	ESC_FLAG	0x01
+#define ESC_ESC		0x02
 
 //struktura zawierająca dane, które zostaną przekazane do wątku
 struct thread_data_t
 {
-	//TODO
 	int new_socket_descriptor;
-	int status;
-	int time;
 };
 
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
 void *ThreadBehavior(void *t_data) {
 	pthread_detach(pthread_self());
 	struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-	//dostęp do pól struktury: (*th_data).pole
-    
-	write ((*th_data).new_socket_descriptor, "Connection Established\n# ",25);
+	// access to  structure's fields: (*th_data).field
+    	char command[BUF_SIZE +1];
+    	char reply[BUF_SIZE +1];
+   	FILE *output_fd;
+   	FILE *input_fd;
+    	char *read_result;
 
-	char command[BUF] = {0};
-    	while ( read((*th_data).new_socket_descriptor, command, BUF) > 0) {
-		printf("Recieved command: %s\n", command);	
-		if(dup2((*th_data).new_socket_descriptor, STDOUT_FILENO) == -1)
-			printf("STDOUT ERROR \n");
-		if(dup2((*th_data).new_socket_descriptor, STDERR_FILENO) == -1)
-			printf("STDERR ERROR \n");
-		system(command);
-	    	write ((*th_data).new_socket_descriptor, "# ",3);
-    	}
-    	printf("Closing connection");
+	//The fdopen() function  associates  a  stream  with  the  existing  file descriptor,  fd.
+        input_fd = fdopen((*th_data).new_socket_descriptor,"r"); 
+        	
+	while (1) {
+		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
+            	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
+		if (read_result == NULL) {
+			printf("Error while reading command\n");
+                	break;
+		}
+		read_result = strchr(command,'\n'); 
+		if (read_result != NULL) 
+			*read_result = 0;
+            	
+		printf("Recognized command '%s'\n", command);
+
+            	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) {
+                	printf("The client is closing connection\n");
+			write((*th_data).new_socket_descriptor, GOODBYE_MSG, sizeof(GOODBYE_MSG));
+			break;
+		}
+            	output_fd = popen(command, "r");
+            	while (1) {
+                		read_result = fgets(reply, BUF_SIZE, output_fd);
+                		if (read_result == NULL) 
+                    			break;
+                		write((*th_data).new_socket_descriptor, reply, strlen(reply));
+            	}
+            	pclose(output_fd);
+        }
+        fclose(input_fd);
     	close((*th_data).new_socket_descriptor);
-   	free(t_data);
-    	pthread_exit(NULL);
+   	free(t_data);	
+	printf("Connection terminated\n");
+    	pthread_exit(NULL);	
 }
 
-//funkcja obsługująca połączenie z nowym klientem
+//handling connection with new client
 void handleConnection(int connection_socket_descriptor) {
 
     //wynik funkcji tworzącej wątek
@@ -74,21 +104,9 @@ void handleConnection(int connection_socket_descriptor) {
     
     create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);
     if (create_result){
-       printf("Błąd przy próbie utworzenia wątku, kod błędu: %d\n", create_result);
+       printf("Pthread error, code : %d\n", create_result);
        exit(-1);
     }
-
-    //TODO (przy zadaniu 1) odbieranie -> wyświetlanie albo klawiatura -> wysyłanie
-    //
-//    char server_response[BUF];
-//    int len = 0;
-//    while (1) {
-//	    memset(server_response, 0, BUF);
-//	    fgets(server_response, BUF, stdin);
-//	    len = strlen(server_response);
-//	    write (connection_socket_descriptor, server_response, len);
-//    }
-//    	printf("New connection established, socket id: %x\n", connection_socket_descriptor);
 }
 
 int main(int argc, char* argv[])
@@ -134,13 +152,13 @@ int main(int argc, char* argv[])
    bind_result = bind(server_socket_descriptor, (struct sockaddr*)&server_address, sizeof(struct sockaddr));
    if (bind_result < 0)
    {
-       fprintf(stderr, "%s: Błąd przy próbie dowiązania adresu IP i numeru portu do gniazda.\n", argv[0]);
+       fprintf(stderr, "%s: Binding error.\n", argv[0]);
        exit(1);
    }
 	printf("Server started.\n");
    listen_result = listen(server_socket_descriptor, QUEUE_SIZE);
    if (listen_result < 0) {
-       fprintf(stderr, "%s: Błąd przy próbie ustawienia wielkości kolejki.\n", argv[0]);
+       fprintf(stderr, "%s: Setting queue size error\n", argv[0]);
        exit(1);
    }
 
@@ -148,7 +166,7 @@ int main(int argc, char* argv[])
    	while(1) {
        		connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
        		if (connection_socket_descriptor < 0) {
-           		fprintf(stderr, "%s: Błąd przy próbie utworzenia gniazda dla połączenia.\n", argv[0]);
+           		fprintf(stderr, "%s: Cannot set socket to new connection\n", argv[0]);
            		exit(1);
        		}
 
