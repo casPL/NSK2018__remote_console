@@ -66,13 +66,17 @@ void *ThreadBehavior(void *t_data) {
 		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
 		if (read_result == NULL) {
-			printf("Error while reading command\n");
+                	printf("[ID%d] Error while reading command\n",(*th_data).id);
                 	break;
 		}
 		read_result = strchr(command,'\n'); 
-		if (read_result != NULL) 
+		if (read_result == NULL) {
+                	printf("[ID%d] Could not find new line charcter\n",(*th_data).id);
+                	break;
+		}
+		else
 			*read_result = 0;
-            	
+
 		printf("[ID%d] Received command '%s'\n",(*th_data).id,  command);
 
             	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) {
@@ -82,7 +86,8 @@ void *ThreadBehavior(void *t_data) {
 		}
 
             	output_fd = popen(add_stderr(command), "r");
-            	while (1) {
+            	
+		while (1) {
                 		read_result = fgets(reply, BUF_SIZE, output_fd);
                 		if (read_result == NULL) 
                     			break;
