@@ -58,7 +58,10 @@ void *ThreadBehavior(void *t_data) {
 
 	//The fdopen() function  associates  a  stream  with  the  existing  file descriptor,  fd.
         input_fd = fdopen((*th_data).new_socket_descriptor,"r"); 
-        	
+        
+	//ignore SIGPIPE signal, like CTRL-C
+	signal(SIGPIPE, SIG_IGN);
+
 	while (1) {
 		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
@@ -89,8 +92,8 @@ void *ThreadBehavior(void *t_data) {
         }
         fclose(input_fd);
     	close((*th_data).new_socket_descriptor);
-   	free(t_data);	
 	printf("[ID%d] Connection terminated\n",(*th_data).id);
+   	free(t_data);	
     	pthread_exit(NULL);	
 }
 

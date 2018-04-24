@@ -2,4 +2,9 @@
 
 Simple academic project.
 
-Telnet server with simple authentication and even simpler telnet clinet.
+
+Remote console. 
+
+Usage:
+./server [port number]
+./client [host name] [port number]
