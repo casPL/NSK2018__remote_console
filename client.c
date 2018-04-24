@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 	1024
 #define NUM_THREADS     5
 
 
@@ -24,20 +24,22 @@ void *ThreadBehavior(void *t_data)
 {
 	struct thread_data_t *th_data = (struct thread_data_t*)t_data;
 	//dostęp do pól struktury: (*th_data).pole
-	printf("Socket descriptor to: %i\n", (*th_data).desc_new);
+	
+	
+	
 	char text[BUF_SIZE] = {0};
 	printf("> ");
 	while (fgets(text, BUF_SIZE, stdin) == text) {
 		if(strncmp(text, "bye\n", strlen("bye\n")) == 0) break;
 		if(send((*th_data).desc_new, text, strlen(text)+1, 0) < 0) printf("Error while sending");
 	}
-//	char buf[BUF_SIZE] = {0};
-//	int filled = 0;	
-//	while(filled = recv((*th_data).desc_new, buf, BUF_SIZE-1, 0)) {
-//		buf[filled] = '\0';
-//		printf("%s", buf);
-//		fflush(stdout);
-//	}
+	char buf[BUF_SIZE] = {0};
+	int filled = 0;	
+	while(filled = recv((*th_data).desc_new, buf, BUF_SIZE-1, 0)) {
+		buf[filled] = '\0';
+		printf("%s", buf);
+		fflush(stdout);
+	}
 	printf("Terminating connection.\n");
     	pthread_exit(NULL);
 }
