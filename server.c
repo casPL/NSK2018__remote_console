@@ -43,10 +43,13 @@ int auth (char * password, char * login_name, int session_id) {
 	}
 	printf("[ID%d] Scanning credentials file ",session_id);
 	while(fscanf(cred_file, "%s :: %s", buf1, buf2) != EOF) {
+		// cool animation section
 		printf(".");
 		fflush(stdout);
 		usleep(600000);
-
+		// sction end
+		
+		//simply compare password passed by user and password stored in a file
 		if (strcmp(password, buf2) == 0) {
 			login_name = buf1;
 			printf("\n[ID%d] Authentincation passed. User name: %s\n",session_id, buf1);
@@ -61,8 +64,8 @@ int auth (char * password, char * login_name, int session_id) {
 
 //send STDERR with STDOUR
 char * add_stderr (char * command, char * execute) {
-	strcpy(execute, command);
-	strcat(execute, STDERR_POSTFIX);
+	strcpy(execute, command); //copy command string to 'execute' string
+	strcat(execute, STDERR_POSTFIX); //append stderr postfix
 	return execute;
 }
 
@@ -108,18 +111,19 @@ void *ThreadBehavior(void *t_data) {
     		pthread_exit(NULL);
 	}
 	(*th_data).password[0]= 0; //data won't be read by another process
-	write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));
+	write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));  //say hello
 	fgets(command, BUF_SIZE, input_fd); //read rest of input_fd
 	//section end
 
 	while (1) {
+
 		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
 		if (read_result == NULL) {
                 	printf("[ID%d] Error while reading command\n",(*th_data).session_id);
                 	break;
 		}
-		read_result = strchr(command,'\n'); 
+		read_result = strchr(command,'\n'); //look for new line character, if not found break the while loop
 		if (read_result == NULL) {
                 	printf("[ID%d] Could not find new line charcter\n",(*th_data).session_id);
               	 	break;
@@ -129,31 +133,31 @@ void *ThreadBehavior(void *t_data) {
 
 		printf("[ID%d] Received command '%s'\n",(*th_data).session_id,  command);
 
-            	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) {
+            	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) { 
                 	printf("[ID%d] The client is closing connection\n",(*th_data).session_id);
 			write((*th_data).new_socket_descriptor, GOODBYE_MSG, sizeof(GOODBYE_MSG));
 			break;
 		}
 		
 
-		char * execute = malloc(strlen(command)+strlen(STDERR_POSTFIX)-1);
-            	output_fd = popen(add_stderr(command, execute), "r");
-            	free(execute);
+		char * execute = malloc(strlen(command)+strlen(STDERR_POSTFIX)-1);  //works better with -1
+            	output_fd = popen(add_stderr(command, execute), "r"); //execute command and direct output to output_fd
+            	free(execute); //free memory after execution
 
 
 		while (1) {
-                		read_result = fgets(reply, BUF_SIZE, output_fd);
+                		read_result = fgets(reply, BUF_SIZE, output_fd);  //read from file descriptor 
                 		if (read_result == NULL) 
                     			break;
-                		write((*th_data).new_socket_descriptor, reply, strlen(reply));
+                		write((*th_data).new_socket_descriptor, reply, strlen(reply)); //send it via socket
             	}
-            	pclose(output_fd);
+            	pclose(output_fd);  //close file descriptor
         }
-        fclose(input_fd);
-    	close((*th_data).new_socket_descriptor);
+        fclose(input_fd); //close input file descriptor
+    	close((*th_data).new_socket_descriptor); //close socket
 	printf("[ID%d] Connection terminated\n",(*th_data).session_id);
-   	free(t_data);	
-    	pthread_exit(NULL);	
+   	free(t_data);	//free memory
+    	pthread_exit(NULL);	 //close thread
 }
 
 //handling connection with new client
@@ -171,7 +175,7 @@ void handleConnection(int connection_socket_descriptor) {
     t_data->new_socket_descriptor = connection_socket_descriptor;
     t_data->session_id =GLOBAL_ID;
     
-    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);
+    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);  //create pthread
     if (create_result){
        printf("Pthread error, code : %d\n", create_result);
        exit(-1);
