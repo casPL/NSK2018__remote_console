@@ -14,4 +14,3 @@ Usage:
 Known bugs:
 1. memory leaks in add_stderr() 
 2. improper SIGPIPE handling in specific conditions
-3. server works better with netcat than dedicated client
