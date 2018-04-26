@@ -1,7 +1,10 @@
 # NSK2018__remote_console
 
 Simple academic project.
-Remote console - server-client 
+Remote console: server + client 
+
+Compilation:
+make
 
 Usage:
 
@@ -13,4 +16,4 @@ Usage:
 
 Known bugs:
 1. memory leaks in add_stderr() 
-2. improper SIGPIPE handling in specific conditions
+2. improper SIGPIPE handling in specific circumstances
