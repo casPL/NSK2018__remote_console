@@ -1,7 +1,7 @@
 /* 
-	Simple network console server.
-	inf138575
-	PUT :: NSK 2018
+ *	Network console server
+ *	inf138575
+ *	PUT NSK2018
 */
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@
 int GLOBAL_ID = 0;
 
 int auth (char * password, char * login_name, int session_id) {
-	printf("[ID%d] Authentincation process started. Pass: %s\n",session_id, password);
+	printf("[ID%d] Authentincation process started with password: %s\n",session_id, password);
 	char buf1[MAX_LOGIN_NAME_LENGTH];
 	char buf2[MAX_LOGIN_NAME_LENGTH];
 	FILE * cred_file;
@@ -45,7 +45,7 @@ int auth (char * password, char * login_name, int session_id) {
 	while(fscanf(cred_file, "%s :: %s", buf1, buf2) != EOF) {
 		printf(".");
 		fflush(stdout);
-		usleep(300000);
+		usleep(600000);
 
 		if (strcmp(password, buf2) == 0) {
 			login_name = buf1;
@@ -53,7 +53,7 @@ int auth (char * password, char * login_name, int session_id) {
 			return 1;
 		}
 	}
-	printf("\n[ID%d] Authentincation process failed. Access forbiden\n",session_id);
+	printf("\n[ID%d] Authentincation process failed. Access denied\n",session_id);
 	return 0;
 
 }
@@ -84,7 +84,7 @@ void *ThreadBehavior(void *t_data) {
 
 	GLOBAL_ID++;
 
-	printf("Connection established. ID: %d\n", (*th_data).session_id);
+	printf("[ID%d] Connection established\n", (*th_data).session_id);
     	char command[BUF_SIZE +1];
     	char reply[BUF_SIZE +1];
    	FILE *output_fd;
@@ -100,13 +100,14 @@ void *ThreadBehavior(void *t_data) {
 	fscanf(input_fd, "%s", (*th_data).password);
 	if (auth((*th_data).password, (*th_data).login_name, (*th_data).session_id) ==0) {
 		write((*th_data).new_socket_descriptor, ACCESS_DENIED_MSG, sizeof(ACCESS_DENIED_MSG));
+		(*th_data).password[0] = 0; //data won't be read by another process
        		fclose(input_fd);
     		close((*th_data).new_socket_descriptor);
 		printf("[ID%d] Connection terminated due to failed authentication\n",(*th_data).session_id);
    		free(t_data);	
     		pthread_exit(NULL);
 	}
-
+	(*th_data).password[0]= 0; //data won't be read by another process
 	write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));
 	fgets(command, BUF_SIZE, input_fd); //read rest of input_fd
 	//section end
