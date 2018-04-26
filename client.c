@@ -1,3 +1,13 @@
+/*
+ *	Network console server
+ *	inf138575
+ *	PUT NSK2018
+ */ 
+
+
+
+
+
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -57,7 +67,7 @@ void handleConnection(int connection_socket_descriptor) {
 		buf[strlen(buf)] = '\0';
 		printf("%s", buf);
 		memset(buf, 0, BUF_SIZE);
-		//fflush(stdout);
+		fflush(stdout);
 	}
 }
 
