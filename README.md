@@ -8,3 +8,9 @@ Remote console.
 Usage:
 ./server [port number]
 ./client [host name] [port number]
+
+
+
+Known bugs:
+1. memory leaks 
+2. improper SIGPIPE handling in specific conditions

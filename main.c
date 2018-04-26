@@ -21,35 +21,70 @@
 #define QUEUE_SIZE 5
 #define BUF_SIZE 1024
 #define PROMPT "> "
-#define HELLO_MSG "Connection established\n"
+#define HELLO_MSG "Connection established\nEnter password: "
 #define GOODBYE_MSG "Bye... \n"
+#define ACCESS_GRANTED_MSG  "Welcome!\n" 
+#define ACCESS_DENIED_MSG "ACCESS DENIED\n"
 #define STDERR_POSTFIX " 2>&1"
+#define MAX_LOGIN_NAME_LENGTH 20
+#define MAX_PASSWORD_LENGTH 20
 
 int GLOBAL_ID = 0;
 
+int auth (char * password, char * login_name, int session_id) {
+	printf("[ID%d] Authentincation process started. Pass: %s\n",session_id, password);
+	char buf1[MAX_LOGIN_NAME_LENGTH];
+	char buf2[MAX_LOGIN_NAME_LENGTH];
+	FILE * cred_file;
+	cred_file = fopen("credentials.txt", "r");
+	if (cred_file == NULL) {
+		printf("Error. Could not open credentials file.\n");
+		exit(2);
+	}
+	printf("[ID%d] Scanning credentials file ",session_id);
+	while(fscanf(cred_file, "%s :: %s", buf1, buf2) != EOF) {
+		printf(".");
+		fflush(stdout);
+		usleep(300000);
+
+		if (strcmp(password, buf2) == 0) {
+			login_name = buf1;
+			printf("\n[ID%d] Authentincation passed. User name: %s\n",session_id, buf1);
+			return 1;
+		}
+	}
+	printf("\n[ID%d] Authentincation process failed. Access forbiden\n",session_id);
+	return 0;
+
+}
+
+
 //send STDERR with STDOUR
-char * add_stderr (char * command) {
-	char * execute = malloc(strlen(command)+strlen(STDERR_POSTFIX));
+char * add_stderr (char * command, char * execute) {
 	strcpy(execute, command);
 	strcat(execute, STDERR_POSTFIX);
 	return execute;
 }
 
-struct thread_data_t
-{
+struct thread_data_t {
 	int new_socket_descriptor;
-	int id;
+	int session_id;
+	char * login_name;
+	char password[MAX_PASSWORD_LENGTH];
 };
 
 void *ThreadBehavior(void *t_data) {
 	pthread_detach(pthread_self());
+	
+	//ignore SIGPIPE signal, like CTRL-C
+	signal(SIGPIPE, SIG_IGN);
+
 	struct thread_data_t *th_data = (struct thread_data_t*)t_data;
 	// access to  structure's fields: (*th_data).field
 
-	printf("Connection established. ID: %d\n", (*th_data).id);
-	write((*th_data).new_socket_descriptor, HELLO_MSG, sizeof(HELLO_MSG));
-	
 	GLOBAL_ID++;
+
+	printf("Connection established. ID: %d\n", (*th_data).session_id);
     	char command[BUF_SIZE +1];
     	char reply[BUF_SIZE +1];
    	FILE *output_fd;
@@ -57,36 +92,54 @@ void *ThreadBehavior(void *t_data) {
     	char *read_result;
 
 	//The fdopen() function  associates  a  stream  with  the  existing  file descriptor,  fd.
-        input_fd = fdopen((*th_data).new_socket_descriptor,"r"); 
-        
-	//ignore SIGPIPE signal, like CTRL-C
-	signal(SIGPIPE, SIG_IGN);
+       	input_fd = fdopen((*th_data).new_socket_descriptor,"r"); 
+
+	//Auth section
+	write((*th_data).new_socket_descriptor, HELLO_MSG, sizeof(HELLO_MSG));
+	
+	fscanf(input_fd, "%s", (*th_data).password);
+	if (auth((*th_data).password, (*th_data).login_name, (*th_data).session_id) ==0) {
+		write((*th_data).new_socket_descriptor, ACCESS_DENIED_MSG, sizeof(ACCESS_DENIED_MSG));
+       		fclose(input_fd);
+    		close((*th_data).new_socket_descriptor);
+		printf("[ID%d] Connection terminated due to failed authentication\n",(*th_data).session_id);
+   		free(t_data);	
+    		pthread_exit(NULL);
+	}
+
+	write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));
+	fgets(command, BUF_SIZE, input_fd); //read rest of input_fd
+	//section end
 
 	while (1) {
 		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
 		if (read_result == NULL) {
-                	printf("[ID%d] Error while reading command\n",(*th_data).id);
+                	printf("[ID%d] Error while reading command\n",(*th_data).session_id);
                 	break;
 		}
 		read_result = strchr(command,'\n'); 
 		if (read_result == NULL) {
-                	printf("[ID%d] Could not find new line charcter\n",(*th_data).id);
-                	break;
+                	printf("[ID%d] Could not find new line charcter\n",(*th_data).session_id);
+              	 	break;
 		}
 		else
 			*read_result = 0;
 
-		printf("[ID%d] Received command '%s'\n",(*th_data).id,  command);
+		printf("[ID%d] Received command '%s'\n",(*th_data).session_id,  command);
 
             	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) {
-                	printf("[ID%d] The client is closing connection\n",(*th_data).id);
+                	printf("[ID%d] The client is closing connection\n",(*th_data).session_id);
 			write((*th_data).new_socket_descriptor, GOODBYE_MSG, sizeof(GOODBYE_MSG));
 			break;
 		}
+		
 
-            	output_fd = popen(add_stderr(command), "r");
-            	
+		char * execute = malloc(strlen(command)+strlen(STDERR_POSTFIX)-1);
+            	output_fd = popen(add_stderr(command, execute), "r");
+            	free(execute);
+
+
 		while (1) {
                 		read_result = fgets(reply, BUF_SIZE, output_fd);
                 		if (read_result == NULL) 
@@ -97,7 +150,7 @@ void *ThreadBehavior(void *t_data) {
         }
         fclose(input_fd);
     	close((*th_data).new_socket_descriptor);
-	printf("[ID%d] Connection terminated\n",(*th_data).id);
+	printf("[ID%d] Connection terminated\n",(*th_data).session_id);
    	free(t_data);	
     	pthread_exit(NULL);	
 }
@@ -115,7 +168,7 @@ void handleConnection(int connection_socket_descriptor) {
     struct thread_data_t * t_data;
     t_data = malloc(sizeof(struct thread_data_t));
     t_data->new_socket_descriptor = connection_socket_descriptor;
-    t_data->id =GLOBAL_ID;
+    t_data->session_id =GLOBAL_ID;
     
     create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);
     if (create_result){
