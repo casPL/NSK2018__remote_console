@@ -4,6 +4,7 @@ Simple academic project.
 Remote console - server-client 
 
 Usage:
+
 ./server [port number]
 
 ./client [host name] [port number]
@@ -13,3 +14,4 @@ Usage:
 Known bugs:
 1. memory leaks in add_stderr() 
 2. improper SIGPIPE handling in specific conditions
+3. server works better with netcat than dedicated client
