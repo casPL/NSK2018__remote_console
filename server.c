@@ -93,16 +93,23 @@ void *ThreadBehavior(void *t_data) {
    	FILE *output_fd;
    	FILE *input_fd;
     	char *read_result;
+	int write_status;
 
 	//The fdopen() function  associates  a  stream  with  the  existing  file descriptor,  fd.
        	input_fd = fdopen((*th_data).new_socket_descriptor,"r"); 
 
 	//Auth section
-	write((*th_data).new_socket_descriptor, HELLO_MSG, sizeof(HELLO_MSG));
+	write_status = write((*th_data).new_socket_descriptor, HELLO_MSG, sizeof(HELLO_MSG));
+	if(write_status <0) {
+		printf("Writing error. Please debug for more information\n");
+	}
 	
 	fscanf(input_fd, "%s", (*th_data).password);
 	if (auth((*th_data).password, (*th_data).login_name, (*th_data).session_id) ==0) {
-		write((*th_data).new_socket_descriptor, ACCESS_DENIED_MSG, sizeof(ACCESS_DENIED_MSG));
+		write_status = write((*th_data).new_socket_descriptor, ACCESS_DENIED_MSG, sizeof(ACCESS_DENIED_MSG));
+		if(write_status <0) {
+			printf("Writing error. Please debug for more information\n");
+		}
 		(*th_data).password[0] = 0; //data won't be read by another process
        		fclose(input_fd);
     		close((*th_data).new_socket_descriptor);
@@ -117,7 +124,11 @@ void *ThreadBehavior(void *t_data) {
 
 	while (1) {
 
-		write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
+		write_status =write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
+		if(write_status <0) {
+			printf("Writing error. Please debug for more information\n");
+		}
+		
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
 		if (read_result == NULL) {
                 	printf("[ID%d] Error while reading command\n",(*th_data).session_id);
