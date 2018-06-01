@@ -17,3 +17,4 @@ Usage:
 Known bugs:
 1. memory leaks in add_stderr() 
 2. improper SIGPIPE handling in specific circumstances
+3. not resistant to message fragmentation and other network malfunctions

@@ -4,10 +4,23 @@ Projekt zaliczeniowy przedmiotu NSK.
 Oprogramowanie ma zazadnie umożliwić zdalne wykonywanie poleceń w powłoce systemu na którym został uruchomiony serwer. Serwer otwiera port TCP(numer podany jako parametr przy uruchomieniu) i oczekuje na połączenia przychodzące. Serwer jest wielowątkowy. Nie ma problemów z obsługą wielu połączeń.
 Do serwera można połączyć się dedykowaną aplikacją kliencką lub dowolnym narzędziem do tekstowej komunikacji sieciowej  np. netcat.
 Zaimplementowano prosty mechanizm autoryzacji. Logując się do serwera należy podać hasło, które jest porównywane z wcześniej zapisanymi hasłami w pliku.  
-Komunikacja pomiędzy aplikacjami wykorzystuje protokół TCP/IP. Sama wymiana komunikatów nie jest w żaden sposób szyfrowana, tj. jest to plain text. 
-Całość została napisana w języku c z wykrzystaniem między innymi bibliotek pthread oraz sys/socket. Programy dedykowane na systemy Linux.
+Komunikacja pomiędzy aplikacjami wykorzystuje protokół TCP/IP. Sama wymiana komunikatów nie jest w żaden sposób szyfrowana, tj. jest to plain text. Nie są również wykorzystane kody operacji jak w oryginalnym Telnecie. 
+Całość została napisana w języku C z wykrzystaniem między innymi bibliotek pthread oraz sys/socket. Programy dedykowane na systemy Linux.
 
 Testowane na na Debian-9.4.0.
+
+Opis protokołu:
+
+
+-- Nawiązywanie połączenia: Klient, używając adresu serwera i numeru portu, tworzy polaczenie TCP/IP z serwerem.
+-- Serwer akceptuje połączenie i odsyłając żądanie hasła. Serwer oczekuje na hasło od klienta. 
+-- Uwierzytelnienie: Klient wysyła hasła - jest to linia znaków ASCII zakończona znakiem nowej linii(EOL).
+-- Odpowiedź: Serwer potwierdza autoryzację, wysyła znak zachęty i oczekuje na polecenia.
+	Pojedyńczy komunikat to linia znaków ASCII i nie ma minimalnego rozmiaru. Funckja fgets() czyta ze źródła do napotkania znaku nowej linii lub końca źródła lub błędu. Maksymalny rozmiar komunikatu ogranicza rozmiar bufora, który został ustawiony na 1024 bajty(zmienna BUF_MAX). Komunikat kończy znak nowej linii.
+-- Polecenie: Do każdej wiadomości od klienta(lecz po stronie serwera) dodawany jest POSTFIX " 2>&1" tak aby funkcja popen() zwróciła również standard error i tym samym serwer mógł odesłać cały rezultat polecnia tak jak by było wpisane w lokalnym systemie. Rezultat jest również odsyłany linia po linii. Pętla się kończy gdy funkcja fgets() zwróci wartość NULL.
+-- Zakończenie połączenia: Połączenie TCP/IP jest zrywane przez serwer w przypadku błędu lub odczytania komunikatu "quit" lub "exit".
+Klient może wcześniej zerwać połączenie - serwer to odnotuje i zamknie sesję.
+
 
 inf138575  
 

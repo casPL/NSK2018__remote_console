@@ -100,16 +100,14 @@ void *ThreadBehavior(void *t_data) {
 
 	//Auth section
 	write_status = write((*th_data).new_socket_descriptor, HELLO_MSG, sizeof(HELLO_MSG));
-	if(write_status <0) {
+	if(write_status <0) 
 		printf("Writing error. Please debug for more information\n");
-	}
 	
 	fscanf(input_fd, "%s", (*th_data).password);
 	if (auth((*th_data).password, (*th_data).login_name, (*th_data).session_id) ==0) {
 		write_status = write((*th_data).new_socket_descriptor, ACCESS_DENIED_MSG, sizeof(ACCESS_DENIED_MSG));
-		if(write_status <0) {
+		if(write_status <0) 
 			printf("Writing error. Please debug for more information\n");
-		}
 		(*th_data).password[0] = 0; //data won't be read by another process
        		fclose(input_fd);
     		close((*th_data).new_socket_descriptor);
@@ -118,16 +116,17 @@ void *ThreadBehavior(void *t_data) {
     		pthread_exit(NULL);
 	}
 	(*th_data).password[0]= 0; //data won't be read by another process
-	write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));  //say hello
+	write_status = write((*th_data).new_socket_descriptor, ACCESS_GRANTED_MSG, sizeof(ACCESS_GRANTED_MSG));  //say hello
+	if(write_status <0) 
+		printf("Writing error. Please debug for more information\n");
 	fgets(command, BUF_SIZE, input_fd); //read rest of input_fd
 	//section end
 
 	while (1) {
 
 		write_status =write((*th_data).new_socket_descriptor, PROMPT, sizeof(PROMPT));
-		if(write_status <0) {
+		if(write_status <0) 
 			printf("Writing error. Please debug for more information\n");
-		}
 		
             	read_result = fgets(command, BUF_SIZE, input_fd); //fgets() reads until new line or EOF
 		if (read_result == NULL) {
@@ -146,7 +145,9 @@ void *ThreadBehavior(void *t_data) {
 
             	if (strcmp(command,"exit") == 0 || strcmp(command, "quit") == 0) { 
                 	printf("[ID%d] The client is closing connection\n",(*th_data).session_id);
-			write((*th_data).new_socket_descriptor, GOODBYE_MSG, sizeof(GOODBYE_MSG));
+			write_status = write((*th_data).new_socket_descriptor, GOODBYE_MSG, sizeof(GOODBYE_MSG));
+			if(write_status <0) 
+				printf("Writing error. Please debug for more information\n");
 			break;
 		}
 		
