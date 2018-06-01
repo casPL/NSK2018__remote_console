@@ -1,0 +1,9 @@
+Zdalna konsola.
+
+Oprogramowanie ma zazadnie umożliwić zdalne wykonywanie poleceń w powłoce systemu na którym został uruchomiony serwer. Serwer otwiera port(numer podany jako parametr przy uruchomieniu) i oczekuje na połączenia przychodzące. Serwer jest wielowątkowy. Nie ma problemów z obsługą wielu połączeń.
+Do serwera można połączyć się dedykowaną aplikacją kliencką lub dowolnym narzędziem do tekstowej komunikacji sieciowej  np. netcat.
+Zaimplementowano prosty mechanizm autoryzacji. Logując się do serwera należy podać hasło, które jest porównywane z wcześniej zapisanymi hasłami w pliku.  
+Komunikacja pomiędzy aplikacjami wykorzystuje protokół TCP/IP. Sama wymiana komunikatów nie jest w żaden sposób szyfrowana, tj. jest to plain text. 
+Całość została napisana w języku c z wykrzystaniem między innymi bibliotek pthread oraz sys/socket.
+Autor: inf138575  
+
